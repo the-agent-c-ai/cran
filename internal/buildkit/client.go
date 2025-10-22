@@ -27,12 +27,18 @@ func NewClient(sshConn ssh.Connection, log zerolog.Logger) *Client {
 }
 
 // Build executes a build on the remote buildkit node.
+// Returns the image tag that was built (digest retrieval requires registry operations).
 func (bkclient *Client) Build(
-	_ context.Context,
+	ctx context.Context,
 	contextPath string,
 	dockerfilePath string,
 	platform string,
 ) (string, error) {
+	// Check context for cancellation
+	if err := ctx.Err(); err != nil {
+		return "", fmt.Errorf("build cancelled: %w", err)
+	}
+
 	bkclient.log.Info().
 		Str("context", contextPath).
 		Str("dockerfile", dockerfilePath).
@@ -70,13 +76,19 @@ func (bkclient *Client) Build(
 }
 
 // BuildMultiPlatform builds for multiple platforms and creates a manifest list.
+// Returns the tag that was built (digest retrieval requires registry operations).
 func (bkclient *Client) BuildMultiPlatform(
-	_ context.Context,
+	ctx context.Context,
 	contextPath string,
 	dockerfilePath string,
 	platforms []string,
 	tag string,
-) error {
+) (string, error) {
+	// Check context for cancellation
+	if err := ctx.Err(); err != nil {
+		return "", fmt.Errorf("build cancelled: %w", err)
+	}
+
 	bkclient.log.Info().
 		Strs("platforms", platforms).
 		Str("tag", tag).
@@ -109,12 +121,14 @@ func (bkclient *Client) BuildMultiPlatform(
 			Err(err).
 			Msg("multi-platform build failed")
 
-		return fmt.Errorf("multi-platform build failed: %w", err)
+		return "", fmt.Errorf("multi-platform build failed: %w", err)
 	}
 
-	bkclient.log.Info().Msg("multi-platform build complete")
+	bkclient.log.Info().
+		Str("tag", tag).
+		Msg("multi-platform build complete")
 
-	return nil
+	return tag, nil
 }
 
 // UploadContext uploads the build context to the remote host.

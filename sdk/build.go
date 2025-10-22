@@ -132,17 +132,21 @@ func (build *Build) execute(ctx context.Context) error {
 
 	// Execute multi-platform build
 	remoteDockerfile := fmt.Sprintf("%s/%s", remotePath, build.dockerfile)
-	if err := bkClient.BuildMultiPlatform(
+
+	builtTag, err := bkClient.BuildMultiPlatform(
 		ctx,
 		remotePath,
 		remoteDockerfile,
 		platforms,
 		build.tag,
-	); err != nil {
+	)
+	if err != nil {
 		return fmt.Errorf("failed to build image: %w", err)
 	}
 
-	build.log.Info().Msg("build complete")
+	build.log.Info().
+		Str("tag", builtTag).
+		Msg("build complete")
 
 	return nil
 }

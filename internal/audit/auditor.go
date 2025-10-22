@@ -26,6 +26,14 @@ func NewAuditor(log zerolog.Logger) *Auditor {
 	}
 }
 
+// ImageAuditOptions configures image audit behavior.
+type ImageAuditOptions struct {
+	RegistryHost string // Registry host for authentication (optional)
+	Username     string // Registry username (optional)
+	Password     string // Registry password (optional)
+	RuleSet      string // Rule set: "strict", "recommended", or "minimal"
+}
+
 // HadolintIssue represents a single hadolint issue.
 type HadolintIssue struct {
 	Code    string `json:"code"`
@@ -94,7 +102,7 @@ func (auditor *Auditor) AuditDockerfile(dockerfilePath string) (*Result, error) 
 }
 
 // AuditImage audits an image with dockle.
-func (auditor *Auditor) AuditImage(imageRef, registryHost, username, password, ruleSet string) (*Result, error) {
+func (auditor *Auditor) AuditImage(imageRef string, opts ImageAuditOptions) (*Result, error) {
 	// Ensure dockle is installed
 	docklePath, err := auditor.installer.Ensure(tools.Dockle)
 	if err != nil {
@@ -113,12 +121,12 @@ func (auditor *Auditor) AuditImage(imageRef, registryHost, username, password, r
 
 	// Set credentials via environment variables to avoid exposing in process list
 	// DOCKLE_AUTH_URL scopes credentials to the specific registry
-	if username != "" && password != "" && registryHost != "" {
-		authURL := "https://" + registryHost
+	if opts.Username != "" && opts.Password != "" && opts.RegistryHost != "" {
+		authURL := "https://" + opts.RegistryHost
 		cmd.Env = append(cmd.Env,
 			"DOCKLE_AUTH_URL="+authURL,
-			"DOCKLE_USERNAME="+username,
-			"DOCKLE_PASSWORD="+password,
+			"DOCKLE_USERNAME="+opts.Username,
+			"DOCKLE_PASSWORD="+opts.Password,
 		)
 	}
 
@@ -160,7 +168,7 @@ func (auditor *Auditor) AuditImage(imageRef, registryHost, username, password, r
 	// Determine which issues should cause failure based on RuleSet
 	var failingIssues int
 
-	switch ruleSet {
+	switch opts.RuleSet {
 	case "strict":
 		// Fail on FATAL and WARN
 		failingIssues = fatalCount + warnCount
@@ -185,29 +193,6 @@ func (auditor *Auditor) AuditImage(imageRef, registryHost, username, password, r
 		Int("issues", result.ImageIssues).
 		Bool("passed", result.Passed).
 		Msg("image audit complete")
-
-	return result, nil
-}
-
-// CheckCustom performs custom quality checks.
-func (auditor *Auditor) CheckCustom(dockerfilePath string) (*Result, error) {
-	auditor.log.Info().
-		Str("dockerfile", dockerfilePath).
-		Msg("running custom checks")
-
-	issues := []string{}
-
-	// TODO: Implement custom checks
-	// - Base image digest enforcement
-	// - Multistage build detection
-	// - Layer count threshold
-	// - Non-root user enforcement
-
-	result := &Result{
-		DockerfileIssues: len(issues),
-		Passed:           len(issues) == 0,
-		Output:           strings.Join(issues, "\n"),
-	}
 
 	return result, nil
 }

@@ -56,7 +56,10 @@ Plans are Go programs that define your container image operations:
 ```go
 package main
 
-import "github.com/the-agent-c-ai/cran/sdk"
+import (
+    "context"
+    "github.com/the-agent-c-ai/cran/sdk"
+)
 
 func main() {
     _ = sdk.LoadEnv(".env")
@@ -75,7 +78,8 @@ func main() {
         Tag("ghcr.io/org/app:v1.0").
         Build()
 
-    plan.Execute()
+    ctx := context.Background()
+    plan.Execute(ctx)
 }
 ```
 

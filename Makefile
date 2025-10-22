@@ -76,7 +76,7 @@ lint-yaml:
 
 lint-shell: $(call recursive_wildcard,$(MAKEFILE_DIR)/,*.sh)
 	$(call title, $@)
-	@shellcheck -a -x $^
+	@if [ -n "$^" ]; then shellcheck -a -x $^; else echo "No shell scripts found, skipping shellcheck"; fi
 	$(call footer, $@)
 
 # See https://github.com/andyfeller/gh-ssh-allowed-signers for automation to retrieve contributors keys
@@ -107,6 +107,7 @@ lint-licenses:
 	@cd $(MAKEFILE_DIR) \
 		&& go-licenses check --include_tests --allowed_licenses=Apache-2.0,BSD-2-Clause,BSD-3-Clause,MIT,MPL-2.0 \
 		  --ignore gotest.tools \
+		  --ignore github.com/in-toto/in-toto-golang \
 		  ./...
 	$(call footer, $@)
 

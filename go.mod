@@ -2,13 +2,11 @@ module github.com/the-agent-c-ai/cran
 
 go 1.24.0
 
-replace github.com/the-agent-c-ai/hadron => ../hadron
-
 require (
 	github.com/google/go-containerregistry v0.20.6
 	github.com/moby/buildkit v0.25.1
 	github.com/rs/zerolog v1.34.0
-	github.com/the-agent-c-ai/hadron v0.0.0-00010101000000-000000000000
+	github.com/the-agent-c-ai/hadron v0.0.1
 	github.com/urfave/cli/v2 v2.27.7
 )
 

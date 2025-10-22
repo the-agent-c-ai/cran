@@ -106,32 +106,21 @@ func (auditJob *Audit) execute(_ context.Context) error {
 		if !result.Passed {
 			allPassed = false
 		}
-
-		// Run custom checks on Dockerfile
-		customResult, err := auditor.CheckCustom(auditJob.dockerfile)
-		if err != nil {
-			return fmt.Errorf("failed to run custom checks: %w", err)
-		}
-
-		if customResult.Output != "" {
-			auditJob.log.Info().Msg(customResult.Output)
-		}
-
-		if !customResult.Passed {
-			allPassed = false
-		}
 	}
 
 	// Audit image if provided
 	if auditJob.image != nil {
-		var registryHost, username, password string
-		if auditJob.registry != nil {
-			registryHost = auditJob.registry.host
-			username = auditJob.registry.username
-			password = auditJob.registry.password
+		opts := audit.ImageAuditOptions{
+			RuleSet: string(auditJob.ruleSet),
 		}
 
-		result, err := auditor.AuditImage(imageRef, registryHost, username, password, string(auditJob.ruleSet))
+		if auditJob.registry != nil {
+			opts.RegistryHost = auditJob.registry.host
+			opts.Username = auditJob.registry.username
+			opts.Password = auditJob.registry.password
+		}
+
+		result, err := auditor.AuditImage(imageRef, opts)
 		if err != nil {
 			return fmt.Errorf("failed to audit image: %w", err)
 		}
