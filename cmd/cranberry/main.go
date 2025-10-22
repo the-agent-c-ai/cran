@@ -54,14 +54,26 @@ func executeCommand(cliCtx *cli.Context) error {
 	planPath := cliCtx.String("plan")
 	dryRun := cliCtx.Bool("dry-run")
 
-	// Check if plan file exists
-	if _, err := os.Stat(planPath); os.IsNotExist(err) {
+	// Determine if planPath is a directory or file
+	stat, err := os.Stat(planPath)
+	if err != nil {
 		return fmt.Errorf("%w: %s", errPlanFileNotFound, planPath)
 	}
 
-	// Check for optional shared.go in same directory
-	planDir := filepath.Dir(planPath)
-	sharedPath := filepath.Join(planDir, "shared.go")
+	var (
+		planDir string
+		args    []string
+	)
+
+	if stat.IsDir() {
+		// Directory: go run .
+		planDir = planPath
+		args = []string{"run", "."}
+	} else {
+		// File: go run basename
+		planDir = filepath.Dir(planPath)
+		args = []string{"run", filepath.Base(planPath)}
+	}
 
 	// Set environment variables for plan execution
 	if dryRun {
@@ -70,29 +82,14 @@ func executeCommand(cliCtx *cli.Context) error {
 		}
 	}
 
-	// Build command to execute plan
-	args := []string{"run"}
-
-	// Add shared.go if it exists
-	if _, err := os.Stat(sharedPath); err == nil {
-		args = append(args, sharedPath)
-	}
-
-	// Get absolute path for the plan
-	absPath, err := filepath.Abs(planPath)
-	if err != nil {
-		return fmt.Errorf("failed to get absolute path: %w", err)
-	}
-
-	args = append(args, absPath)
-
+	// #nosec G204 -- args constructed from validated plan path, executing go run is intentional
 	cmd := exec.Command("go", args...)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	cmd.Env = os.Environ()
-	cmd.Dir = filepath.Dir(absPath) // Execute from plan's directory (matches hadron behavior)
+	cmd.Dir = planDir
 
-	log.Info().Str("plan", absPath).Bool("dry-run", dryRun).Msg("executing plan")
+	log.Info().Str("plan", planPath).Bool("dry-run", dryRun).Msg("executing plan")
 
 	if err := cmd.Run(); err != nil {
 		return fmt.Errorf("plan execution failed: %w", err)

@@ -32,22 +32,22 @@ func main() {
 	plan.VersionCheck("caddy-version").Source(caddyImage).Build()
 
 	// Retrieve registry credentials from 1Password
-	ghcrUsername, err := sdk.GetSecret(ctx, "op://Security (build)/ghcr.io-rw/username")
+	ghcrUsername, err := sdk.GetSecret(ctx, "op://Security (build)/deploy.registry.rw/username")
 	if err != nil {
-		log.Fatal().Err(err).Msg("failed to retrieve GHCR username from 1Password")
+		log.Fatal().Err(err).Msg("failed to retrieve Registry username from 1Password")
 	}
 
-	ghcrToken, err := sdk.GetSecret(ctx, "op://Security (build)/ghcr.io-rw/password")
+	ghcrToken, err := sdk.GetSecret(ctx, "op://Security (build)/deploy.registry.rw/password")
 	if err != nil {
-		log.Fatal().Err(err).Msg("failed to retrieve GHCR token from 1Password")
+		log.Fatal().Err(err).Msg("failed to retrieve Registry token from 1Password")
 	}
 
-	dockerhubUsername, err := sdk.GetSecret(ctx, "op://Security (build)/docker.io-read/username")
+	dockerhubUsername, err := sdk.GetSecret(ctx, "op://Security (build)/deploy.docker.io.ro/username")
 	if err != nil {
 		log.Fatal().Err(err).Msg("failed to retrieve Docker Hub username from 1Password")
 	}
 
-	dockerhubPassword, err := sdk.GetSecret(ctx, "op://Security (build)/docker.io-read/password")
+	dockerhubPassword, err := sdk.GetSecret(ctx, "op://Security (build)/deploy.docker.io.ro/password")
 	if err != nil {
 		log.Fatal().Err(err).Msg("failed to retrieve Docker Hub password from 1Password")
 	}

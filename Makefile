@@ -221,7 +221,7 @@ build: ## Build the cranberry binary
 
 install: ## Install cranberry to GOPATH/bin
 	@echo "Installing $(BINARY_NAME)..."
-	$(GOINSTALL) ./cmd/cranberry
+	$(GOINSTALL) ./cmd/$(BINARY_NAME)
 	@echo "Installed to $$(go env GOPATH)/bin/$(BINARY_NAME)"
 
 clean: ## Clean build artifacts
