@@ -5,6 +5,7 @@ import (
 	"context"
 
 	"github.com/rs/zerolog"
+
 	hadron "github.com/the-agent-c-ai/hadron/sdk"
 )
 
