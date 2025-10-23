@@ -28,10 +28,11 @@ func NewAuditor(log zerolog.Logger) *Auditor {
 
 // ImageAuditOptions configures image audit behavior.
 type ImageAuditOptions struct {
-	RegistryHost string // Registry host for authentication (optional)
-	Username     string // Registry username (optional)
-	Password     string // Registry password (optional)
-	RuleSet      string // Rule set: "strict", "recommended", or "minimal"
+	RegistryHost string   // Registry host for authentication (optional)
+	Username     string   // Registry username (optional)
+	Password     string   // Registry password (optional)
+	RuleSet      string   // Rule set: "strict", "recommended", or "minimal"
+	IgnoreChecks []string // Dockle checks to ignore (e.g., "DKL-DI-0005")
 }
 
 // HadolintIssue represents a single hadolint issue.
@@ -128,6 +129,12 @@ func (auditor *Auditor) AuditImage(imageRef string, opts ImageAuditOptions) (*Re
 			"DOCKLE_USERNAME="+opts.Username,
 			"DOCKLE_PASSWORD="+opts.Password,
 		)
+	}
+
+	// Set ignored checks via DOCKLE_IGNORES environment variable
+	if len(opts.IgnoreChecks) > 0 {
+		ignores := strings.Join(opts.IgnoreChecks, ",")
+		cmd.Env = append(cmd.Env, "DOCKLE_IGNORES="+ignores)
 	}
 
 	output, err := cmd.CombinedOutput()

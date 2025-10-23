@@ -26,12 +26,13 @@ const (
 
 // Audit represents a Dockerfile and image quality audit.
 type Audit struct {
-	name       string
-	dockerfile string
-	image      *Image
-	registry   *Registry
-	ruleSet    RuleSet
-	log        zerolog.Logger
+	name         string
+	dockerfile   string
+	image        *Image
+	registry     *Registry
+	ruleSet      RuleSet
+	ignoreChecks []string
+	log          zerolog.Logger
 }
 
 // AuditBuilder builds an Audit.
@@ -60,6 +61,13 @@ func (builder *AuditBuilder) Source(image *Image, registry ...*Registry) *AuditB
 // RuleSet sets the rule set severity.
 func (builder *AuditBuilder) RuleSet(ruleSet RuleSet) *AuditBuilder {
 	builder.audit.ruleSet = ruleSet
+
+	return builder
+}
+
+// IgnoreChecks sets specific Dockle checks to ignore (e.g., "DKL-DI-0005").
+func (builder *AuditBuilder) IgnoreChecks(checks ...string) *AuditBuilder {
+	builder.audit.ignoreChecks = append(builder.audit.ignoreChecks, checks...)
 
 	return builder
 }
@@ -111,7 +119,8 @@ func (auditJob *Audit) execute(_ context.Context) error {
 	// Audit image if provided
 	if auditJob.image != nil {
 		opts := audit.ImageAuditOptions{
-			RuleSet: string(auditJob.ruleSet),
+			RuleSet:      string(auditJob.ruleSet),
+			IgnoreChecks: auditJob.ignoreChecks,
 		}
 
 		if auditJob.registry != nil {
